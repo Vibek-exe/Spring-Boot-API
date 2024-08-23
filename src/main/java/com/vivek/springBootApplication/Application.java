@@ -8,6 +8,7 @@ public class Application {
 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
+		//Application start from here then it call controller
 	}
 
 }
