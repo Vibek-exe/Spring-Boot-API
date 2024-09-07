@@ -1,7 +1,9 @@
 package com.vivek.springBootApplication.controller;
 
 import com.vivek.springBootApplication.entity.JournalEntry;
+import com.vivek.springBootApplication.entity.UserEntry;
 import com.vivek.springBootApplication.service.JournalEntryService;
+import com.vivek.springBootApplication.service.UserEntryService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,10 +21,14 @@ public class JournalEntryController {
     @Autowired
     private JournalEntryService journalEntryService;
 
-    @GetMapping
-    public ResponseEntity<?> getAll() { //localhost:8080/journal  GET
+    @Autowired
+    private UserEntryService userEntryService;
+
+    @GetMapping("/{userName}")
+    public ResponseEntity<?> getAllEntriesOfUser(@PathVariable String userName) {
         try {
-            List<JournalEntry> journalEntries = journalEntryService.getAll();
+            UserEntry user =  userEntryService.findByUserName(userName);
+            List<JournalEntry> journalEntries = user.getJournalEntries();
             if (journalEntries != null && !journalEntries.isEmpty()){
                 return new ResponseEntity<>(journalEntries, HttpStatus.OK);
             }
@@ -32,11 +38,10 @@ public class JournalEntryController {
         }
     }
 
-    @PostMapping
-    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry myEntry) { //localhost:8080/journal   POST
+    @PostMapping("/{userName}")
+    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry myEntry,@PathVariable String userName) {
         try {
-            myEntry.setDate(LocalDateTime.now());
-            journalEntryService.saveEntry(myEntry);
+            journalEntryService.saveEntry(myEntry,userName);
             return new ResponseEntity<>(myEntry, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(myEntry, HttpStatus.BAD_REQUEST);
@@ -52,18 +57,19 @@ public class JournalEntryController {
         return new ResponseEntity<>(journalEntry.get(), HttpStatus.NOT_FOUND);
     }
 
-    @DeleteMapping("id/{myId}")
-    public ResponseEntity<?> deleteEntryById(@PathVariable("myId") ObjectId myId) { // ? operator is used to accept any kind of object rather than defining statically
-        journalEntryService.deleteById(myId);
+    @DeleteMapping("id/{userName}/{myId}")
+    public ResponseEntity<?> deleteEntryById(@PathVariable("myId") ObjectId myId,@PathVariable String userName) {
+        journalEntryService.deleteById(myId,userName);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping("id/{myId}")
-    public ResponseEntity<?> updateEntryById(@PathVariable("myId") ObjectId myId, @RequestBody JournalEntry newEntry) {
+    @PutMapping("id/{userName}/{myId}")
+    public ResponseEntity<?> updateEntryById(@PathVariable String userName, @PathVariable("myId") ObjectId myId, @RequestBody JournalEntry newEntry) {
         JournalEntry oldEntry = journalEntryService.findById(myId).orElse(null);
         if (oldEntry != null){
             oldEntry.setTitle(newEntry.getTitle() != null && !newEntry.getTitle().equals("") ? newEntry.getTitle(): oldEntry.getTitle() ) ;
             oldEntry.setContent(newEntry.getContent() != null && !newEntry.getContent().equals("") ? newEntry.getContent(): oldEntry.getContent());
+            journalEntryService.saveEntry(oldEntry);
             return new ResponseEntity<>(oldEntry,HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);

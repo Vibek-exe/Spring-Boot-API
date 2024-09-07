@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "Users")
+@Document(collection = "users")
 @Data
 public class UserEntry {
 
@@ -20,7 +20,7 @@ public class UserEntry {
     private ObjectId id;
     @Indexed(unique = true)
     @NonNull
-    private String username;
+    private String userName;
     @NonNull
     private String password;
 
